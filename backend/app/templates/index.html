@@ -1,0 +1,10 @@
+{% extends "base.html" %} {% import 'bootstrap/wtf.html' as wtf %} {% block app_content %}
+<h1>List of courses</h1>
+{% for course in courses %}
+<p>
+    <a href="course/{{ course.coursename }}">
+        {{ course.coursename }}
+    </a>
+</p>
+{% endfor %} {% if form %} {{ wtf.quick_form(form) }}
+<br> {% endif %} {% for post in posts %} {% include '_post.html' %} {% endfor %} {% endblock %}

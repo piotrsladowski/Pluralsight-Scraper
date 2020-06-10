@@ -1,0 +1,25 @@
+{
+    "manifest_version": 2,
+    "name": "Single",
+    "version": "2.0.1",
+
+    "background": {
+        "persistent": true,
+        "scripts": ["background.js"]
+    },
+    "content_scripts": [{
+        "matches": ["*://*.pluralsight.com/*"],
+        "js": ["content.js"]
+    }],
+    "browser_action": {
+        "default_title": "Single"
+    },
+
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "webRequest",
+        "webRequestBlocking",
+        "<all_urls>"
+    ]
+}
