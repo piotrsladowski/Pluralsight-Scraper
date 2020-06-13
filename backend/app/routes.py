@@ -6,12 +6,35 @@ import urllib.request
 import re
 import os
 
+import random
+import threading
+import time
+
+
+class ExportingThread(threading.Thread):
+    def __init__(self):
+        self.progress = 0
+        super().__init__()
+
+    def run(self):
+        # Your exporting stuff goes here ...
+        for _ in range(10):
+            time.sleep(1)
+            self.progress += 10
+
 @app.route('/')
 @app.route('/index')
 def index():
     user = {'username': 'Mati'}
     courses = Course.query.all()
-    return render_template('index.html', title='Dashboard', courses=courses)
+    global exporting_threads
+
+    thread_id = random.randint(0, 10000)
+    exporting_threads[thread_id] = ExportingThread()
+    exporting_threads[thread_id].start()
+    return 'task id: #%s' % thread_id
+
+    #return render_template('index.html', title='Dashboard', courses=courses)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -75,6 +98,12 @@ directory = f"{path_to_directory}/{course_kind_name}/{course_kind_directory}"
 
 print("Starting index: ")
 i = int(input())
+exporting_threads = {}
+
+@app.route('/progress/<int:thread_id>')
+def progress(thread_id):
+    global exporting_threads
+    return str(exporting_threads[thread_id].progress)
 
 @app.route('/test', methods=['POST'])
 def test():

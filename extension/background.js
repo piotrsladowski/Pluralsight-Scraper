@@ -56,9 +56,23 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 function sendRequestToContentJs(details, kind) {
     // send url to content.js to extract video_name
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { url: details.url }, function(response) {
+        chrome.tabs.sendMessage(tabs[0].id, { text: 'send_url', url: details.url }, function(response) {
+            console.log(tabs[0].id)
             console.log("URL has been sent");
         });
     });
     console.log(`${kind} request: ${details.url}`)
+}
+
+function ConsoleLogNextVideo(domContent) {
+    console.log('Key simulated:\n');
+}
+
+setInterval(nextVideo, 1 * 10 * 1000);
+
+function nextVideo() {
+    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+        // ...if it matches, send a message specifying a callback too
+        chrome.tabs.sendMessage(tabs[0].id, { text: 'next_video' }, ConsoleLogNextVideo);
+    })
 }
