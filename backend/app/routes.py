@@ -23,11 +23,70 @@ class ExportingThread(threading.Thread):
             time.sleep(1)
             self.progress += 10
 
+# Global variables
+
+requestedRequests = set()
+video_patternHD = "hls_1280x720.ts"
+video_patternFHD = "hls_1920x1080.ts"
+audio_pattern = "hls_aac-96k-eng.aac"
+mp4_pattern = "1280x720.mp4"
+
+# Change path below if you want save videos in different location
+path_to_directory = "data2"
+#directory = f"{path_to_directory}/{courseName}"
+
+downloadingNow = "nothing"
+
+# This has to be set manually
+print("Starting index: ")
+i = int(input())
+coursesList = []
+exporting_threads = {}
+
+### Logic
+
+def clear_console():
+    os.system('cls' if os.name=='nt' else 'clear')
+
+def verbose_cls():
+    clear_console()
+    print("##################")
+    print("Downloaded video and audio")
+    print("##################")
+
+def handle_windows_path(posix_path):
+    if os.name == 'nt':
+        return posix_path.replace('/', '\\')
+    return posix_path
+
+def download(url, filename):
+    global downloadingNow
+    # TODO add interrupted connection exception
+    try:
+        Path(filename).parent.mkdir(parents=True, exist_ok=True)
+        downloadingNow = f"{filename}"
+        urllib.request.urlretrieve(url, filename)
+        downloadingNow = "nothing"
+        return True
+    except FileNotFoundError:
+        print("Destination directory doesn't exist")
+        downloadingNow = "nothing"
+        return False
+
+def getCourseList():
+    global coursesList
+    tempList = Course.query.all()
+    for item in tempList:
+        c = str(item).split()[1]
+        c = c[:-1]
+        coursesList.append(c)
+
+getCourseList()
+
 @app.route('/')
 @app.route('/index')
 def index():
-    user = {'username': 'Mati'}
-    courses = Course.query.all()
+    global coursesList
     global exporting_threads
 
     """
@@ -36,7 +95,7 @@ def index():
     exporting_threads[thread_id].start()
     return 'task id: #%s' % thread_id"""
 
-    return render_template('index.html', title='Dashboard', courses=courses)
+    return render_template('index.html', title='Dashboard', courses=coursesList)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -56,54 +115,12 @@ def course(coursename):
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    return render_template('dashboard.html', downloadingText=downloadingNow)
 
 @app.route('/browse')
 def browse():
     course = Course.query.all()
     return render_template('browse.html', courses=course)
-
-
-### Logic
-
-def clear_console():
-    os.system('cls' if os.name=='nt' else 'clear')
-
-def verbose_cls():
-    clear_console()
-    print("##################")
-    print("Downloaded video and audio")
-    print("##################")
-
-def handle_windows_path(posix_path):
-    if os.name == 'nt':
-        return posix_path.replace('/', '\\')
-    return posix_path
-
-def download(url, filename):
-    # TODO add interrupted connection exception
-    try:
-        print("my filenamepath: " + filename)
-        Path(filename).parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(url, filename)
-        return True
-    except FileNotFoundError:
-        print("Destination directory doesn't exist")
-        return False
-
-requestedRequests = set()
-video_patternHD = "hls_1280x720.ts"
-video_patternFHD = "hls_1920x1080.ts"
-audio_pattern = "hls_aac-96k-eng.aac"
-mp4_pattern = "1280x720.mp4"
-
-# Change path below if you want save videos in different location
-path_to_directory = "data2"
-#directory = f"{path_to_directory}/{courseName}"
-
-print("Starting index: ")
-i = int(input())
-exporting_threads = {}
 
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
@@ -122,12 +139,13 @@ def next():
     requestedRequests = set()
     return ""
 
-
+# Main route of scraper
 @app.route('/media', methods=['POST'])
 def media():
     global requestedRequests
     global i
     global directory
+    global coursesList
 
     req = request.json
     url = req['url']
@@ -136,6 +154,12 @@ def media():
     name = name.split('\n')[0]
     courseName = re.sub('[^0-9a-zA-Z]+', '_', courseName)
     name = re.sub('[^0-9a-zA-Z]+', '_', name)
+    if(courseName not in coursesList):
+        c = Course(coursename=courseName)
+        db.session.add(c)
+        db.session.commit()
+        getCourseList()
+        #courses = Course.query.all()
 
     directory = f"{path_to_directory}/{courseName}"
     video_pattern = ""
@@ -159,11 +183,13 @@ def media():
         print(f"downloading {fname}")
         urllib.request.urlretrieve(url, fname)
         print(f"downloading {fname}")
+        courseID = db.session.query(Course).filter_by(coursename=courseName).first().id
         verbose_cls()
         i += 1
 
     # If course uses .aac and .ts we have to filter for unique requests
     if(len(requestedRequests) < 2):
+        courseID = db.session.query(Course).filter_by(coursename=courseName).first().id
         if is_video and video_pattern not in requestedRequests:
             fname = handle_windows_path(f"{directory}/video_{i}_{name}.ts")
             print(f"downloading {fname}")
@@ -172,6 +198,9 @@ def media():
                 print(f"downloading {fname}")
                 print(f"Error during downloading {fname}")
             requestedRequests.add(video_pattern)
+            f = Files(filename=f"video_{i}_{name}.ts", course_id=courseID)
+            db.session.add(f)
+            db.session.commit()
             print(f"Downloaded {fname}")
 
         if is_audio and audio_pattern not in requestedRequests:
@@ -182,6 +211,9 @@ def media():
                 print(f"downloading {fname}")
                 print(f"Error during downloading {fname}")
             requestedRequests.add(audio_pattern)
+            f = Files(filename=f"audio_{i}_{name}.aac", course_id=courseID)
+            db.session.add(f)
+            db.session.commit()
             print(f"Downloaded {fname}")
 
         if len(requestedRequests) == 2:
