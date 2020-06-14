@@ -5,6 +5,7 @@ from app.models import Course, Files
 import urllib.request
 import re
 import os
+from pathlib import Path
 
 import random
 import threading
@@ -29,12 +30,13 @@ def index():
     courses = Course.query.all()
     global exporting_threads
 
+    """
     thread_id = random.randint(0, 10000)
     exporting_threads[thread_id] = ExportingThread()
     exporting_threads[thread_id].start()
-    return 'task id: #%s' % thread_id
+    return 'task id: #%s' % thread_id"""
 
-    #return render_template('index.html', title='Dashboard', courses=courses)
+    return render_template('index.html', title='Dashboard', courses=courses)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -62,7 +64,7 @@ def browse():
     return render_template('browse.html', courses=course)
 
 
-### logic
+### Logic
 
 def clear_console():
     os.system('cls' if os.name=='nt' else 'clear')
@@ -79,7 +81,10 @@ def handle_windows_path(posix_path):
     return posix_path
 
 def download(url, filename):
+    # TODO add interrupted connection exception
     try:
+        print("my filenamepath: " + filename)
+        Path(filename).parent.mkdir(parents=True, exist_ok=True)
         urllib.request.urlretrieve(url, filename)
         return True
     except FileNotFoundError:
@@ -87,14 +92,14 @@ def download(url, filename):
         return False
 
 requestedRequests = set()
-video_pattern = "hls_1280x720.ts"
+video_patternHD = "hls_1280x720.ts"
+video_patternFHD = "hls_1920x1080.ts"
 audio_pattern = "hls_aac-96k-eng.aac"
 mp4_pattern = "1280x720.mp4"
 
-course_kind_directory = "networking"
-course_kind_name = "docker"
-path_to_directory = "data"
-directory = f"{path_to_directory}/{course_kind_name}/{course_kind_directory}"
+# Change path below if you want save videos in different location
+path_to_directory = "data2"
+#directory = f"{path_to_directory}/{courseName}"
 
 print("Starting index: ")
 i = int(input())
@@ -113,7 +118,7 @@ def test():
 @app.route('/next', methods=['POST'])
 def next():
     global requestedRequests
-    print("jazda")
+    print("Cleared recieved requests")
     requestedRequests = set()
     return ""
 
@@ -122,15 +127,28 @@ def next():
 def media():
     global requestedRequests
     global i
+    global directory
+
     req = request.json
     url = req['url']
     name = req['name']
     courseName = req['courseName']
     name = name.split('\n')[0]
-    name = name.replace(' ', '_')
-    for ch in ['/','?','.',',',':','*','"','<','>','|']:
-        if ch in name:
-            name = name.replace(ch, '_')
+    courseName = re.sub('[^0-9a-zA-Z]+', '_', courseName)
+    name = re.sub('[^0-9a-zA-Z]+', '_', name)
+
+    directory = f"{path_to_directory}/{courseName}"
+    video_pattern = ""
+    is_video = False
+    is_videoHD = re.search(video_patternHD, url)
+    is_videoFHD = re.search(video_patternFHD, url)
+    if(is_videoFHD):
+        is_video = True
+        video_pattern = video_patternFHD
+    if(is_videoHD):
+        is_video = True
+        video_pattern = video_patternHD
+    is_audio = re.search(audio_pattern, url)
 
     # There is only one GET request if the wideo is a mp4
     is_mp4 = re.search(mp4_pattern, url)
@@ -144,30 +162,27 @@ def media():
         verbose_cls()
         i += 1
 
-
-    is_video = re.search(video_pattern, url)
-    is_audio = re.search(audio_pattern, url)
     # If course uses .aac and .ts we have to filter for unique requests
     if(len(requestedRequests) < 2):
         if is_video and video_pattern not in requestedRequests:
-            requestedRequests.add(video_pattern)
             fname = handle_windows_path(f"{directory}/video_{i}_{name}.ts")
             print(f"downloading {fname}")
             #urllib.request.urlretrieve(url, fname)
             while(download(url, fname) is False):
                 print(f"downloading {fname}")
                 print(f"Error during downloading {fname}")
-            print(f"pobrałem {fname}")
+            requestedRequests.add(video_pattern)
+            print(f"Downloaded {fname}")
 
         if is_audio and audio_pattern not in requestedRequests:
-            requestedRequests.add(audio_pattern)
             fname = handle_windows_path(f"{directory}/audio_{i}_{name}.aac")
             print(f"downloading {fname}")
             #urllib.request.urlretrieve(url, fname)
             while(download(url, fname) is False):
                 print(f"downloading {fname}")
                 print(f"Error during downloading {fname}")
-            print(f"pobrałem {fname}")
+            requestedRequests.add(audio_pattern)
+            print(f"Downloaded {fname}")
 
         if len(requestedRequests) == 2:
             verbose_cls()

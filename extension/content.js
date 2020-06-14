@@ -15,6 +15,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
     }
 });
 
+
+// Unfortunately website has to implement key event handler
 Podium = {};
 Podium.keydown = function(k) {
     var oEvent = document.createEvent('KeyboardEvent');
