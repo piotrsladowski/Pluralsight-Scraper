@@ -1,5 +1,5 @@
 #!/bin/bash
-# make sure you have ffmpeg 4.x installed
+# make sure you have ffmpeg 4.x installed (3.x is not supported)
 # e.g. for ubuntu 18.04 sudo snap install ffmpeg
 
 scriptName=$0

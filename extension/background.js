@@ -2,6 +2,7 @@ let videoRequestSended = false;
 let audioRequestSended = false;
 let mp4RequestSended = false;
 
+// Extension button listener
 chrome.browserAction.onClicked.addListener(function() {
     videoRequestSended = false;
     audioRequestSended = false;
@@ -15,16 +16,13 @@ chrome.browserAction.onClicked.addListener(function() {
     });
 });
 
-function doStuffWithDom(domContent) {
-    console.log('I received the DOM content:\n');
-}
-
+// Catch all requests and extract interesting ones
 chrome.webRequest.onBeforeSendHeaders.addListener(
     function(details) {
         if (details.url) {
-            const isVideo = details.url.includes("hls_1280x720.ts");
+            const isVideo = details.url.includes("hls_1280x720.ts") || details.url.includes("hls_1920x1080.ts");
             const isAudio = details.url.includes("hls_aac-96k-eng.aac");
-            const isMp4 = details.url.includes("1280x720.mp4");
+            const isMp4 = details.url.includes("1280x720.mp4") || details.url.includes("1920x1080.mp4");
             const isExpiration = details.url.includes("expiretime");
 
             if (!isExpiration) {
@@ -63,6 +61,19 @@ function sendRequestToContentJs(details, kind) {
     });
     console.log(`${kind} request: ${details.url}`)
 }
+
+// Listen for message to automaticaly clear list of requests and start new download
+chrome.commands.onCommand.addListener(function(command) {
+    console.log("key press ok", command)
+    videoRequestSended = false;
+    audioRequestSended = false;
+    mp4RequestSended = false;
+    fetch('http://localhost:5000/next', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: "next_video_please"
+    });
+});
 
 function ConsoleLogNextVideo(domContent) {
     console.log('Key simulated:\n');

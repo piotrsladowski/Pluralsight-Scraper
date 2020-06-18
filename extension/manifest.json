@@ -14,11 +14,21 @@
     "browser_action": {
         "default_title": "Single"
     },
+    "commands": {
+        "toggle-feature-foo": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+5"
+            },
+            "description": "Toggle feature foo",
+            "global": true
+        }
+    },
 
     "permissions": [
         "activeTab",
         "tabs",
         "webRequest",
+        "commands",
         "webRequestBlocking",
         "<all_urls>"
     ]
