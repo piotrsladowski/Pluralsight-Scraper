@@ -15,6 +15,7 @@ for($i = $num1; $i -le $num2; $i++)
 {
     $video= Get-ChildItem ("video_{0}_*.ts" -f $i) | Select-Object -Expand Name
     $audio= Get-ChildItem ("audio_{0}_*.aac" -f $i) | Select-Object -Expand Name
-    $output="$i.mp4"
-    iex ".\ffmpeg.exe -i .\$video -i .\$audio -c:v copy -c:a copy .\$dirname\$output"
+	$out_name = ($video -split "_",3)[-1]
+    $output="$($i)_$out_name.mp4"
+    iex "ffmpeg.exe -hide_banner -i .\$video -i .\$audio -c:v copy -c:a copy .\$dirname\$output"
 }

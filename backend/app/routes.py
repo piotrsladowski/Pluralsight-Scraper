@@ -22,7 +22,7 @@ keyboard = Controller()
 downloadingInterval = 0.1
 videoDuration = 0
 downloadedFiles = 0
-automatic = True # Change this if you'd like to download manually
+automatic = False # Change this if you'd like to download manually
 
 # Change path below if you want save videos in different location
 path_to_directory = "data"
@@ -198,8 +198,8 @@ def media():
                 print(f"Error during downloading {fname}")
             requestedRequests.add(video_pattern)
             f = Files(filename=f"video_{i}_{name}.ts", course_id=courseID)
-            db.session.add(f)
-            db.session.commit()
+            #db.session.add(f)
+            #db.session.commit()
             print(f"Downloaded {fname}")
 
         if is_audio and audio_pattern not in requestedRequests:
@@ -211,8 +211,8 @@ def media():
                 print(f"Error during downloading {fname}")
             requestedRequests.add(audio_pattern)
             f = Files(filename=f"audio_{i}_{name}.aac", course_id=courseID)
-            db.session.add(f)
-            db.session.commit()
+            #db.session.add(f)
+            #db.session.commit()
             print(f"Downloaded {fname}")
 
         if len(requestedRequests) == 2:
