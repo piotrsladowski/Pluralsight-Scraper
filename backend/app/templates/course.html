@@ -1,9 +1,0 @@
-{% extends "base.html" %} {% block app_content %}
-<h2>Name: {{ course.coursename }}</h2>
-<hr>
-<p>Available files</p>
-{% for file in files %}
-<p>
-    <b>{{ file.filename }}</b>
-</p>
-{% endfor %} {% endblock %}

@@ -9,7 +9,7 @@ chrome.browserAction.onClicked.addListener(function() {
     mp4RequestSended = false;
     console.clear()
     console.log("reset")
-    fetch('http://localhost:5000/next', {
+    fetch('http://localhost:45010/next', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: "next_video_please"
@@ -57,6 +57,7 @@ function sendRequestToContentJs(details, kind) {
         chrome.tabs.sendMessage(tabs[0].id, { text: 'send_url', url: details.url }, function(response) {
             console.log(tabs[0].id)
             console.log("URL has been sent");
+            console.log(response.farewell);
         });
     });
     console.log(`${kind} request: ${details.url}`)
@@ -68,7 +69,7 @@ chrome.commands.onCommand.addListener(function(command) {
     videoRequestSended = false;
     audioRequestSended = false;
     mp4RequestSended = false;
-    fetch('http://localhost:5000/next', {
+    fetch('http://localhost:45010/next', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: "next_video_please"
@@ -79,11 +80,11 @@ function ConsoleLogNextVideo(domContent) {
     console.log('Key simulated:\n');
 }
 
-setInterval(nextVideo, 1 * 10 * 1000);
+//setInterval(nextVideo, 1 * 10 * 1000);
 
-function nextVideo() {
-    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+//function nextVideo() {
+//    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
         // ...if it matches, send a message specifying a callback too
-        chrome.tabs.sendMessage(tabs[0].id, { text: 'next_video' }, ConsoleLogNextVideo);
-    })
-}
+//        chrome.tabs.sendMessage(tabs[0].id, { text: 'next_video' }, ConsoleLogNextVideo);
+//    })
+//}
